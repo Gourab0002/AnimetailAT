@@ -17,6 +17,7 @@ app/**/assets/client_secrets.json
 
 # Configuration files
 local.properties
+app/google-services.json
 
 # macOS specific files
 .DS_Store
