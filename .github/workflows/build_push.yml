@@ -118,13 +118,17 @@ jobs:
 
       # Official Animetail stores Google Drive OAuth JSON in this secret.
       # Forks usually do not have it; skip so CI can still build.
+      # secrets cannot be used in `if:` — check the env var in the script instead.
       - name: Write client_secrets.json
-        if: ${{ secrets.CLIENT_SECRETS_TEXT != '' }}
-        uses: DamianReeves/write-file-action@v1.2
-        with:
-          path: app/src/main/assets/client_secrets.json
-          contents: ${{ secrets.CLIENT_SECRETS_TEXT }}
-          write-mode: overwrite
+        env:
+          CLIENT_SECRETS_TEXT: ${{ secrets.CLIENT_SECRETS_TEXT }}
+        run: |
+          if [ -n "$CLIENT_SECRETS_TEXT" ]; then
+            mkdir -p app/src/main/assets
+            printf '%s' "$CLIENT_SECRETS_TEXT" > app/src/main/assets/client_secrets.json
+          else
+            echo "CLIENT_SECRETS_TEXT is not set; skipping Google Drive client secrets"
+          fi
 
       - name: Set up gradle
         uses: gradle/actions/setup-gradle@94baf225fe0a508e581a564467443d0e2379123b # v4.3.0
