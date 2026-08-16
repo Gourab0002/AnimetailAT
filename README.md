@@ -1,33 +1,56 @@
 <div align="center">
 
-<a href="https://aniyomi.org">
+<a href="https://github.com/Gourab0002/AnimetailAT">
     <img src="./.github/assets/icon.png" alt="animetail logo" title="animetail logo" width="80"/>
 </a>
 
-# Animetail [App](#)
+# AnimetailAT
 
-### Full-featured player and reader, based on ~~Tachiyomi~~ Mihon.
-Discover and watch anime, cartoons, series, and more – easier than ever on your Android device.
+### Animetail with AI page translation for raw manga, manhwa, and manhua.
+Fork of [Animetail](https://github.com/Animetailapp/Animetail) (Mihon / Aniyomi). Watch anime and read comics, including untranslated pages.
 
-[![Discord server](https://img.shields.io/discord/1196139193664028762.svg?label=&labelColor=6A7EC2&color=7389D8&logo=discord&logoColor=FFFFFF)](https://discord.gg/fvskrQZb9j)
-[![GitHub downloads](https://img.shields.io/github/downloads/Animetailapp/animetail/total?label=downloads&labelColor=27303D&color=0D1117&logo=github&logoColor=FFFFFF&style=flat)](https://github.com/Animetailapp/Animetail/releases)
-
-[![CI](https://img.shields.io/github/actions/workflow/status/Animetailapp/animetail/build_push.yml?labelColor=27303D)](https://github.com/Animetailapp/Animetail/actions/workflows/build_push.yml)
-[![License: Apache-2.0](https://img.shields.io/github/license/Animetailapp/Animetail?labelColor=27303D&color=818cf8)](/LICENSE)
-[![Crowdin](https://badges.crowdin.net/animetail/localized.svg)](https://crowdin.com/project/animetail)
+[![CI](https://img.shields.io/github/actions/workflow/status/Gourab0002/AnimetailAT/build_push.yml?branch=main&label=CI&labelColor=27303D)](https://github.com/Gourab0002/AnimetailAT/actions/workflows/build_push.yml)
+[![License: Apache-2.0](https://img.shields.io/github/license/Gourab0002/AnimetailAT?labelColor=27303D&color=818cf8)](/LICENSE)
 
 ## Download
 
-[![Animetail Stable](https://img.shields.io/github/release/Animetailapp/animetail.svg?maxAge=3600&label=Stable&labelColor=06599d&color=043b69)](https://github.com/Animetailapp/Animetail/releases)
-[![Animetail Preview](https://img.shields.io/github/v/release/Animetailapp/animetail-preview.svg?maxAge=3600&label=Beta&labelColor=2c2c47&color=1c1c39)](https://github.com/Animetailapp/animetail-preview/releases)
+Every push to `main` builds an installable debug APK.
+
+1. Open the latest [CI run](https://github.com/Gourab0002/AnimetailAT/actions/workflows/build_push.yml).
+2. Download the **animetail-debug-…** artifact.
+3. Install `app-universal-debug.apk` on your phone.
+
+The debug build uses package id `com.dark.animetailv2.dev`, so it can sit next to an official Animetail install.
 
 *Requires Android 8.0 or higher.*
+
+## Page translation
+
+Read raw Japanese, Korean, and Chinese pages in the reader.
+
+1. Open **Settings → Page translation**.
+2. Choose a translator:
+   * **xAI Grok**, **OpenRouter**, **Google Gemini**, or **OpenAI** — paste your own API key.
+   * **On-device (ML Kit)** — no key. Uses Google Play services; first use downloads language models.
+3. Set **Translate from** (Auto, Japanese, Korean, Simplified Chinese, Traditional Chinese) and **Translate to**.
+4. In the reader, tap the translate icon on the bottom bar.
+
+Translated text is drawn over speech bubbles. Original chapter files are not overwritten. Results are cached on the device.
+
+**Notes**
+* Cloud providers send the current page image to the service you choose. Some refuse adult images; if a page stays raw, try xAI or On-device.
+* On-device Chinese OCR reads simplified and traditional text; on-device output is Simplified Chinese.
+* This is a first version: boxes over text, not a full typeset scanlation. Failures currently fall back to the original page.
 
 ## Features
 
 <div align="left">
 
 Features include:
+* AnimetailAT:
+    * AI / on-device page translation for raw manga, manhwa, manhua, and similar image comics
+    * User-supplied API keys (xAI, OpenRouter, Gemini, OpenAI)
+    * GitHub Actions APK builds on every push
 * Animetail:
     * Multimedia Home Feed with Movies, Series, Anime, and Manga recommendations
     * Hero Media Carousel with auto-scrolling (4s), indicator dots, and TMDB/AniList trends integration
@@ -81,9 +104,9 @@ Features include:
 
 [Code of conduct](./CODE_OF_CONDUCT.md) · [Contributing guide](./CONTRIBUTING.md)
 
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+Pull requests are welcome. For page translation changes, open an issue on [this repo](https://github.com/Gourab0002/AnimetailAT/issues).
 
-Before reporting a new issue, take a look at the [FAQ](https://aniyomi.org/docs/faq/general), the [changelog](https://aniyomi.org/changelogs/) and the already opened [issues](https://github.com/Animetailapp/animetail/issues); if you got any questions, join our [Discord server](https://discord.gg/F32UjdJZrR).
+Upstream Animetail docs: [FAQ](https://aniyomi.org/docs/faq/general) · [changelog](https://aniyomi.org/changelogs/) · [issues](https://github.com/Animetailapp/animetail/issues)
 
 ### Repositories
 
@@ -92,7 +115,7 @@ Before reporting a new issue, take a look at the [FAQ](https://aniyomi.org/docs/
 
 ### Credits
 
-Thank you to all the people who have contributed!
+Thank you to everyone who contributed to Tachiyomi, Mihon, Aniyomi, and [Animetail](https://github.com/Animetailapp/Animetail).
 
 <a href="https://github.com/Animetailapp/Animetail/graphs/contributors">
     <img src="https://contrib.rocks/image?repo=Animetailapp/Animetail" alt="Animetail app contributors" title="Animetail app contributors" width="800"/>
