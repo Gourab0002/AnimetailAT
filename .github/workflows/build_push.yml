@@ -133,6 +133,9 @@ jobs:
       - name: Set up gradle
         uses: gradle/actions/setup-gradle@94baf225fe0a508e581a564467443d0e2379123b # v4.3.0
 
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
       - name: Build installable debug APK
         run: ./gradlew :app:assembleDebug --stacktrace --no-daemon
         env:
