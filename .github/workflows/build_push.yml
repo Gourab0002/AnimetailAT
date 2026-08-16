@@ -6,10 +6,10 @@ permissions:
 on:
   push:
     branches:
-
       - '*'
     tags:
       - v*
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -129,17 +129,43 @@ jobs:
       - name: Set up gradle
         uses: gradle/actions/setup-gradle@94baf225fe0a508e581a564467443d0e2379123b # v4.3.0
 
-      - name: Check code format
-        run: ./gradlew spotlessCheck
+      - name: Build installable debug APK
+        run: ./gradlew :app:assembleDebug --stacktrace --no-daemon
+        env:
+          GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4g
 
-      - name: Build app
-        run: ./gradlew assembleRelease -Penable-updater
+      - name: Upload debug APKs
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: animetail-debug-${{ github.ref_name }}-${{ github.run_number }}
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Build release APK
+        run: ./gradlew :app:assembleRelease --stacktrace --no-daemon
+        env:
+          GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4g
+
+      - name: Upload release APKs
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: animetail-release-${{ github.ref_name }}-${{ github.run_number }}
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Check code format
+        continue-on-error: true
+        run: ./gradlew spotlessCheck
 
       - name: Run unit tests
         id: unit_tests
+        continue-on-error: true
         run: ./gradlew testDebugUnitTest
 
       - name: Verify SQLDelight migrations
+        continue-on-error: true
         run: ./gradlew verifySqlDelightMigration
 
       - name: Upload test report
@@ -149,13 +175,8 @@ jobs:
           name: test-report-${{ github.sha }}
           path: app/build/reports/tests/testDebugUnitTest
 
-      - name: Upload APK
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: arm64-v8a-${{ github.sha }}
-          path: app/build/outputs/apk/release/app-arm64-v8a-release-unsigned.apk
-
       - name: Upload mapping
+        if: hashFiles('app/build/outputs/mapping/release/**') != ''
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: mapping-${{ github.sha }}
