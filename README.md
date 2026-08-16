@@ -1,131 +1,95 @@
 <div align="center">
 
-<a href="https://github.com/Gourab0002/AnimetailAT">
-    <img src="./.github/assets/icon.png" alt="animetail logo" title="animetail logo" width="80"/>
-</a>
+<img src="./.github/assets/icon.png" alt="AnimetailAT" width="96"/>
 
 # AnimetailAT
 
-### Animetail with AI page translation for raw manga, manhwa, and manhua.
-Fork of [Animetail](https://github.com/Animetailapp/Animetail) (Mihon / Aniyomi). Watch anime and read comics, including untranslated pages.
+**Watch anime and read manga, manhwa, and manhua — including raw, untranslated pages.**
 
-[![CI](https://img.shields.io/github/actions/workflow/status/Gourab0002/AnimetailAT/build_push.yml?branch=main&label=CI&labelColor=27303D)](https://github.com/Gourab0002/AnimetailAT/actions/workflows/build_push.yml)
+A fork of [Animetail](https://github.com/Animetailapp/Animetail), built on Mihon and Aniyomi.
+
 [![License: Apache-2.0](https://img.shields.io/github/license/Gourab0002/AnimetailAT?labelColor=27303D&color=818cf8)](/LICENSE)
-
-## Download
-
-Every push to `main` builds an installable debug APK.
-
-1. Open the latest [CI run](https://github.com/Gourab0002/AnimetailAT/actions/workflows/build_push.yml).
-2. Download the **animetail-debug-…** artifact.
-3. Install `app-universal-debug.apk` on your phone.
-
-The debug build uses package id `com.dark.animetailv2.dev`, so it can sit next to an official Animetail install.
 
 *Requires Android 8.0 or higher.*
 
+</div>
+
 ## Page translation
 
-Read raw Japanese, Korean, and Chinese pages in the reader.
+AnimetailAT can translate text on comic pages so you can read Japanese, Korean, and Chinese sources in your language.
+
+**Supported translators**
+
+| Provider | Notes |
+|---|---|
+| xAI Grok | Your API key |
+| OpenRouter | Your API key |
+| Google Gemini | Your API key |
+| OpenAI | Your API key |
+| On-device (ML Kit) | No API key. Language models download on first use and require Google Play services. |
+
+**How to use**
 
 1. Open **Settings → Page translation**.
-2. Choose a translator:
-   * **xAI Grok**, **OpenRouter**, **Google Gemini**, or **OpenAI** — paste your own API key.
-   * **On-device (ML Kit)** — no key. Uses Google Play services; first use downloads language models.
-3. Set **Translate from** (Auto, Japanese, Korean, Simplified Chinese, Traditional Chinese) and **Translate to**.
-4. In the reader, tap the translate icon on the bottom bar.
+2. Choose a translator and, if required, add your API key.
+3. Set the source language (or leave Auto) and the target language.
+4. In the reader, tap the translate icon.
 
-Translated text is drawn over speech bubbles. Original chapter files are not overwritten. Results are cached on the device.
+Translations are drawn over the original text. Source files are never modified. Completed pages are cached locally.
 
-**Notes**
-* Cloud providers send the current page image to the service you choose. Some refuse adult images; if a page stays raw, try xAI or On-device.
-* On-device Chinese OCR reads simplified and traditional text; on-device output is Simplified Chinese.
-* This is a first version: boxes over text, not a full typeset scanlation. Failures currently fall back to the original page.
+Source languages include Japanese, Korean, Simplified Chinese, and Traditional Chinese. On-device Chinese output is Simplified Chinese.
+
+Cloud translators send the current page image to the provider you select. Some providers may refuse adult images; if a page is not translated, switch provider or use on-device.
 
 ## Features
 
-<div align="left">
+**AnimetailAT**
+- In-reader page translation for raw manga, manhwa, and manhua
+- User-owned API keys; keys stay on the device
+- On-device OCR and translation as an offline option
 
-Features include:
-* AnimetailAT:
-    * AI / on-device page translation for raw manga, manhwa, manhua, and similar image comics
-    * User-supplied API keys (xAI, OpenRouter, Gemini, OpenAI)
-    * GitHub Actions APK builds on every push
-* Animetail:
-    * Multimedia Home Feed with Movies, Series, Anime, and Manga recommendations
-    * Hero Media Carousel with auto-scrolling (4s), indicator dots, and TMDB/AniList trends integration
-    * Direct launch from "Continue watching & reading" cards with exact progress formatting
-    * Real tracking scores (MAL/AniList/TMDB) and rating badges on media items
-    * Support for Cast functionality
-    * Support themes monet
-    * Android tv compatibility (only banner)
-    * Optimized Discord Rich Presence for Manga and Anime, no external API.
+**Library and discovery**
+- Home feed for movies, series, anime, and manga
+- Continue watching and reading with saved progress
+- Tracker scores from MyAnimeList, AniList, TMDB, and others
+- Categories, tags, and advanced library search
 
-* Kuukiyomi:
-    * Torrent support(Needs right extensions) (@Diegopyl1209)
-    * Custom Theme support
-    * resmush.it(Data Saver Provider)
-    * Group by tags in library
-    * Discord Rich Presence for Manga
-* Aniyomi:
-    * Watching videos
-    * View images
-    * Torrent streaming support
-    * Support for thumbnail preview when seeking in player
-    * Embedded HTTP server for extensions
-    * Local reading/watching of downloaded content
-    * A configurable reader with multiple viewers, reading directions and other settings.
-    * A configurable player built on mpv-android with multiple options and settings
-    * Tracker support: [MyAnimeList](https://myanimelist.net/), [AniList](https://anilist.co/), [Kitsu](https://kitsu.app/), [MangaUpdates](https://mangaupdates.com), [Shikimori](https://shikimori.one), [Bangumi](https://bgm.tv/), and [Hikka](https://hikka.io/)
-    * Categories to organize your library
-    * Light and dark themes
-    * Create backups locally to read/watch offline or to your desired cloud service
-* Mihon:
-    * Advanced library search supporting logical/comparison operators, field-specific prefixes, and nested expressions
-    * Vertical chapter navigator for long strip mode with customizable height and reader settings
-    * Resumable image downloads
-    * Split extension lists support with `index.pb` format
-* Other fork features:
-    * TachiyomiSY:
-        * Data Saver
-        * Edit Info
-        * Library Grouping
-        * Double Pages
-    * Animiru:
-        * Discord Rich Presence
-    * TachiyomiJ2K:
-        * Page Preload
-    * Komikku:
-        * Repository visibility toggle, icon support, and name display
+**Reader**
+- Multiple viewing modes and reading directions
+- Webtoon / long-strip layout with a vertical chapter navigator
+- Dual-page, crop, data saver, and local / downloaded reading
 
-</div>
+**Player**
+- mpv-based player with audio, subtitle, and decoder options
+- Thumbnail preview while seeking
+- Torrent streaming (with compatible extensions)
+- Cast support
+
+**Tracking and extras**
+- MyAnimeList, AniList, Kitsu, MangaUpdates, Shikimori, Bangumi, and Hikka
+- Local backups
+- Discord Rich Presence
+- Light, dark, and custom themes
 
 ## Contributing
 
 [Code of conduct](./CODE_OF_CONDUCT.md) · [Contributing guide](./CONTRIBUTING.md)
 
-Pull requests are welcome. For page translation changes, open an issue on [this repo](https://github.com/Gourab0002/AnimetailAT/issues).
+Pull requests are welcome. Please open an issue first for larger changes.
 
-Upstream Animetail docs: [FAQ](https://aniyomi.org/docs/faq/general) · [changelog](https://aniyomi.org/changelogs/) · [issues](https://github.com/Animetailapp/animetail/issues)
+## Credits
 
-### Repositories
-
-[![aniyomiorg/aniyomi-website - GitHub](https://github-readme-stats.vercel.app/api/pin/?username=aniyomiorg&repo=aniyomi-website&bg_color=161B22&text_color=c9d1d9&title_color=818cf8&icon_color=818cf8&border_radius=8&hide_border=true&description_lines_count=2)](https://github.com/aniyomiorg/aniyomi-website/)
-[![aniyomiorg/aniyomi-mpv-lib - GitHub](https://github-readme-stats.vercel.app/api/pin/?username=aniyomiorg&repo=aniyomi-mpv-lib&bg_color=161B22&text_color=c9d1d9&title_color=818cf8&icon_color=818cf8&border_radius=8&hide_border=true&description_lines_count=2)](https://github.com/aniyomiorg/aniyomi-mpv-lib/)
-
-### Credits
-
-Thank you to everyone who contributed to Tachiyomi, Mihon, Aniyomi, and [Animetail](https://github.com/Animetailapp/Animetail).
+AnimetailAT is based on [Animetail](https://github.com/Animetailapp/Animetail), which builds on Tachiyomi, Mihon, and Aniyomi.
 
 <a href="https://github.com/Animetailapp/Animetail/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=Animetailapp/Animetail" alt="Animetail app contributors" title="Animetail app contributors" width="800"/>
+    <img src="https://contrib.rocks/image?repo=Animetailapp/Animetail" alt="Animetail contributors" width="800"/>
 </a>
 
-### Disclaimer
+## Disclaimer
 
-The developer(s) of this application does not have any affiliation with the content providers available, and this application hosts zero content.
+The developers of this application are not affiliated with any content providers. The application hosts no content.
 
-### License
+## License
 
 <pre>
 Copyright © 2015 Javier Tomás
@@ -145,5 +109,3 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 </pre>
-
-</div>
