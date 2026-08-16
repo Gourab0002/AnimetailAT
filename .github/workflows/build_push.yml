@@ -116,14 +116,10 @@ jobs:
           java-version: 17
           distribution: temurin
 
+      # Official Animetail stores Google Drive OAuth JSON in this secret.
+      # Forks usually do not have it; skip so CI can still build.
       - name: Write client_secrets.json
-        uses: DamianReeves/write-file-action@v1.2
-        with:
-          path: app/src/main/assets/client_secrets.json
-          contents: ${{ secrets.CLIENT_SECRETS_TEXT }}
-          write-mode: overwrite
-
-      - name: Write client_secrets.json
+        if: ${{ secrets.CLIENT_SECRETS_TEXT != '' }}
         uses: DamianReeves/write-file-action@v1.2
         with:
           path: app/src/main/assets/client_secrets.json
