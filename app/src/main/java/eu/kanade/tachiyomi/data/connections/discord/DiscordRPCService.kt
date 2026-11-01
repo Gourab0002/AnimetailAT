@@ -20,8 +20,10 @@ import eu.kanade.tachiyomi.data.notification.NotificationReceiver
 import eu.kanade.tachiyomi.data.notification.Notifications
 import eu.kanade.tachiyomi.ui.player.settings.PlayerPreferences
 import eu.kanade.tachiyomi.util.system.notificationBuilder
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.domain.category.anime.interactor.GetAnimeCategories
@@ -36,9 +38,9 @@ import kotlin.math.floor
 class DiscordRPCService : Service() {
 
     private val connectionsManager: ConnectionsManager by injectLazy()
-    private val scope: CoroutineScope by injectLazy()
+    private val serviceJob = SupervisorJob()
+    private val serviceScope = CoroutineScope(serviceJob + Dispatchers.IO)
 
-    @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate() {
         super.onCreate()
         // Initialize the native SDK if not already done
@@ -54,8 +56,9 @@ class DiscordRPCService : Service() {
                 DiscordRpcManager.reconnectWithToken(effectiveToken)
             }
 
-            // Listen for connection ready state and update RPC automatically when established
-            scope.launchIO {
+            // Listen for connection ready state and update RPC automatically when established.
+            // This scope is cancelled in onDestroy so a restarted service does not leak the old one.
+            serviceScope.launchIO {
                 DiscordRpcManager.connectionStatus.collect { status ->
                     if (status == DiscordRpcManager.Status.Connected) {
                         try {
@@ -74,6 +77,8 @@ class DiscordRPCService : Service() {
                                     setScreen(this@DiscordRPCService, currentScreen)
                                 }
                             }
+                        } catch (e: CancellationException) {
+                            throw e
                         } catch (e: Exception) {
                             Log.e(TAG, "Error updating presence on connection ready: ${e.message}", e)
                         }
@@ -87,6 +92,7 @@ class DiscordRPCService : Service() {
     }
 
     override fun onDestroy() {
+        serviceJob.cancel()
         NotificationReceiver.dismissNotification(this, Notifications.ID_DISCORD_RPC)
         DiscordRpcManager.destroy()
         super.onDestroy()
@@ -151,6 +157,55 @@ class DiscordRPCService : Service() {
 
         private var activePlayerData: PlayerData? = null
         private var activeReaderData: ReaderData? = null
+        private var screenBeforeWebView: DiscordScreen? = null
+
+        /**
+         * Shows the WebView presence once. Player and reader details stay stored
+         * so they can be restored when the WebView closes.
+         */
+        internal suspend fun showWebView(context: Context) {
+            if (currentScreen != DiscordScreen.WEBVIEW) {
+                screenBeforeWebView = currentScreen
+                currentScreen = DiscordScreen.WEBVIEW
+            }
+            if (!connectionsPreferences.enableDiscordRPC().get()) return
+            setAnimeScreen(context, DiscordScreen.WEBVIEW)
+        }
+
+        /**
+         * Puts back the presence that was active before [showWebView].
+         * Safe to call after the WebView activity has been destroyed.
+         */
+        internal suspend fun restoreAfterWebView(context: Context) {
+            val previous = screenBeforeWebView
+            screenBeforeWebView = null
+            if (!connectionsPreferences.enableDiscordRPC().get()) {
+                if (previous != null && previous != DiscordScreen.WEBVIEW) {
+                    currentScreen = previous
+                }
+                return
+            }
+            when (previous) {
+                DiscordScreen.VIDEO -> {
+                    val data = activePlayerData
+                    if (data != null) {
+                        setAnimeScreen(context, DiscordScreen.VIDEO, data)
+                    } else {
+                        setScreen(context, lastUsedScreen)
+                    }
+                }
+                DiscordScreen.MANGA -> {
+                    val data = activeReaderData
+                    if (data != null) {
+                        setMangaScreen(context, DiscordScreen.MANGA, data)
+                    } else {
+                        setScreen(context, lastUsedScreen)
+                    }
+                }
+                null, DiscordScreen.WEBVIEW -> setScreen(context, lastUsedScreen)
+                else -> setScreen(context, previous)
+            }
+        }
 
         private const val MP_PREFIX = "mp:"
         private const val TAG = "DiscordRPCService"

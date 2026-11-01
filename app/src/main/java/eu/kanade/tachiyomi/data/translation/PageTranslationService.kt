@@ -5,7 +5,9 @@ import android.graphics.BitmapFactory
 import eu.kanade.tachiyomi.data.translation.translator.OnDeviceTranslator
 import eu.kanade.tachiyomi.data.translation.translator.PageTranslator
 import eu.kanade.tachiyomi.data.translation.translator.VisionLlmTranslator
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -60,50 +62,89 @@ class PageTranslationService(
         cache.get(cacheKey)?.let { return Buffer().write(it) }
 
         val deferred = inFlightMutex.withLock {
-            inFlight.getOrPut(cacheKey) {
-                scope.async {
-                    renderTranslated(originalBytes, provider, sourceLang, targetLang)
-                        .also { translated ->
-                            if (translated !== originalBytes) {
-                                cache.put(cacheKey, translated)
-                            }
-                        }
-                }
-            }
+            inFlight[cacheKey] ?: newTranslationTask(
+                cacheKey,
+                originalBytes,
+                provider,
+                sourceLang,
+                targetLang,
+            ).also { inFlight[cacheKey] = it }
         }
+        deferred.start()
         return try {
             Buffer().write(deferred.await())
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Page translation failed" }
             imageSource
-        } finally {
-            inFlightMutex.withLock { inFlight.remove(cacheKey) }
         }
     }
 
-    @Suppress("MagicNumber")
+    private fun newTranslationTask(
+        cacheKey: String,
+        originalBytes: ByteArray,
+        provider: TranslationProvider,
+        sourceLang: String,
+        targetLang: String,
+    ): Deferred<ByteArray> {
+        val taskRef = arrayOfNulls<Deferred<ByteArray>>(1)
+        val task = scope.async(start = CoroutineStart.LAZY) {
+            try {
+                renderTranslated(originalBytes, provider, sourceLang, targetLang).also { translated ->
+                    cache.put(cacheKey, translated)
+                }
+            } finally {
+                inFlightMutex.withLock {
+                    if (inFlight[cacheKey] === taskRef[0]) {
+                        inFlight.remove(cacheKey)
+                    }
+                }
+            }
+        }
+        taskRef[0] = task
+        return task
+    }
+
     private suspend fun renderTranslated(
         originalBytes: ByteArray,
         provider: TranslationProvider,
         sourceLang: String,
         targetLang: String,
     ): ByteArray {
-        val original = decodeBitmap(originalBytes)
-            ?: throw TranslationException("Could not decode page image")
+        return semaphoreFor(provider).withPermit {
+            val original = decodeBitmap(originalBytes)
+                ?: throw TranslationException("Could not decode page image")
+            try {
+                composeTranslation(original, originalBytes, provider, sourceLang, targetLang)
+            } finally {
+                original.recycle()
+            }
+        }
+    }
+
+    private suspend fun composeTranslation(
+        original: Bitmap,
+        originalBytes: ByteArray,
+        provider: TranslationProvider,
+        sourceLang: String,
+        targetLang: String,
+    ): ByteArray {
         val prepared = downscaleForProvider(original, provider)
-        val blocks = semaphoreFor(provider).withPermit {
-            detectAndTranslate(prepared, provider, sourceLang, targetLang)
-        }
-        if (blocks.isEmpty()) {
+        try {
+            val blocks = detectAndTranslate(prepared, provider, sourceLang, targetLang)
+            if (blocks.isEmpty()) return originalBytes
+            val composed = TranslationCompositor.draw(original, blocks)
+            try {
+                val output = Buffer()
+                composed.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, output.outputStream())
+                return output.readByteArray()
+            } finally {
+                if (composed !== original) composed.recycle()
+            }
+        } finally {
             if (prepared !== original) prepared.recycle()
-            return originalBytes
         }
-        val composed = TranslationCompositor.draw(original, blocks)
-        val output = Buffer()
-        composed.compress(Bitmap.CompressFormat.JPEG, 90, output.outputStream())
-        if (composed !== original) composed.recycle()
-        if (prepared !== original) prepared.recycle()
-        return output.readByteArray()
     }
 
     private suspend fun detectAndTranslate(
@@ -115,7 +156,7 @@ class PageTranslationService(
         val translator = translatorFor(provider)
         val tiles = tilesFor(bitmap, provider)
         return try {
-            if (tiles.size == 1) {
+            val blocks = if (tiles.size == 1) {
                 translator.translate(tiles.first().bitmap, sourceLang, targetLang)
             } else if (provider == TranslationProvider.ON_DEVICE) {
                 coroutineScope {
@@ -134,6 +175,7 @@ class PageTranslationService(
                     }
                 }
             }
+            dedupeOverlappingBlocks(blocks)
         } finally {
             tiles.forEach { tile ->
                 if (tile.bitmap !== bitmap) tile.bitmap.recycle()
@@ -227,6 +269,7 @@ class PageTranslationService(
     }
 
     companion object {
+        private const val JPEG_QUALITY = 90
         private const val CLOUD_MAX_WIDTH = 1280
         private const val ON_DEVICE_MAX_WIDTH = 1600
         private const val CLOUD_TILE_HEIGHT = 1600

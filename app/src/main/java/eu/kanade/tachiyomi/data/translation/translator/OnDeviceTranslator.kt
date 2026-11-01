@@ -13,6 +13,8 @@ import com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions
 import com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
 import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import eu.kanade.tachiyomi.data.translation.ChineseScript
+import eu.kanade.tachiyomi.data.translation.ChineseScriptConverter
 import eu.kanade.tachiyomi.data.translation.TranslatedTextBlock
 import eu.kanade.tachiyomi.data.translation.TranslationException
 import kotlinx.coroutines.sync.Mutex
@@ -33,14 +35,23 @@ class OnDeviceTranslator : PageTranslator {
         val ocr = recognize(bitmap, sourceLang)
         if (ocr.blocks.isEmpty()) return emptyList()
 
+        val detectedScript = ChineseScriptConverter.scriptOf(sourceLang)
+            ?: ChineseScriptConverter.scriptOf(ocr.lang)
+        val targetScript = ChineseScriptConverter.scriptOf(targetLang)
+        if (detectedScript != null && targetScript != null && detectedScript != targetScript) {
+            return ocr.blocks.map { block ->
+                block.copy(translated = ChineseScriptConverter.convert(block.original, targetScript))
+            }
+        }
+
         val from = mlKitLanguage(ocr.lang)
             ?: throw TranslationException("On-device translation does not support $sourceLang")
         val to = mlKitLanguage(targetLang)
             ?: throw TranslationException("On-device translation does not support $targetLang")
 
-        if (from == to) {
-            return ocr.blocks
-        }
+        // The page is already in the target language. Drawing the OCR boxes
+        // would cover the original text with a copy of itself.
+        if (from == to) return emptyList()
 
         val translator = mutex.withLock {
             translators.getOrPut("$from-$to") {
@@ -65,7 +76,12 @@ class OnDeviceTranslator : PageTranslator {
             val translated = runCatching {
                 translator.translate(block.original).await()
             }.getOrDefault(block.original)
-            block.copy(translated = translated)
+            val scripted = if (targetScript == ChineseScript.TRADITIONAL) {
+                ChineseScriptConverter.convert(translated, ChineseScript.TRADITIONAL)
+            } else {
+                translated
+            }
+            block.copy(translated = scripted)
         }
     }
 

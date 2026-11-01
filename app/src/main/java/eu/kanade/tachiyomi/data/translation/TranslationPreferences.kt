@@ -1,5 +1,9 @@
 package eu.kanade.tachiyomi.data.translation
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import tachiyomi.core.common.preference.Preference
 import tachiyomi.core.common.preference.PreferenceStore
 import tachiyomi.core.common.preference.getEnum
@@ -67,5 +71,27 @@ class TranslationPreferences(private val preferenceStore: PreferenceStore) {
 
     fun hasCredentials(provider: TranslationProvider = this.provider.get()): Boolean {
         return !provider.needsApiKey || apiKeyPreference(provider).get().isNotBlank()
+    }
+
+    /**
+     * Emits whenever a setting that changes an open page's translation changes,
+     * including the model for the provider that is currently selected.
+     */
+    fun readerReloadSignals(): Flow<List<Any?>> {
+        return provider.changes().flatMapLatest { selected ->
+            val modelChanges = if (selected.needsApiKey) {
+                modelPreference(selected).changes()
+            } else {
+                flowOf("mlkit")
+            }
+            combine(
+                enabled.changes(),
+                sourceLanguage.changes(),
+                targetLanguage.changes(),
+                modelChanges,
+            ) { enabled, source, target, model ->
+                listOf(enabled, selected, source, target, model)
+            }
+        }
     }
 }

@@ -313,6 +313,8 @@ dependencies {
 
     // Tests
     testImplementation(libs.bundles.test)
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation("androidx.test:runner:1.6.2")
 
     // For detecting memory leaks; see https://square.github.io/leakcanary/
     // debugImplementation(libs.leakCanary.android)

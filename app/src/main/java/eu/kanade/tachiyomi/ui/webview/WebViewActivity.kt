@@ -12,7 +12,6 @@ import eu.kanade.presentation.webview.WebViewScreenContent
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.animesource.online.AnimeHttpSource
 import eu.kanade.tachiyomi.data.connections.discord.DiscordRPCService
-import eu.kanade.tachiyomi.data.connections.discord.DiscordScreen
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.base.activity.BaseActivity
@@ -21,6 +20,7 @@ import eu.kanade.tachiyomi.util.system.openInBrowser
 import eu.kanade.tachiyomi.util.system.toShareIntent
 import eu.kanade.tachiyomi.util.system.toast
 import eu.kanade.tachiyomi.util.view.setComposeContent
+import kotlinx.coroutines.CoroutineScope
 import logcat.LogPriority
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import tachiyomi.core.common.util.lang.launchIO
@@ -28,6 +28,8 @@ import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.source.anime.service.AnimeSourceManager
 import tachiyomi.domain.source.manga.service.MangaSourceManager
 import tachiyomi.i18n.MR
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
 import uy.kohesive.injekt.injectLazy
 
 class WebViewActivity : BaseActivity() {
@@ -37,6 +39,7 @@ class WebViewActivity : BaseActivity() {
     private val network: NetworkHelper by injectLazy()
 
     private var assistUrl: String? = null
+    private var discordWebViewShown = false
 
     init {
         registerSecureActivity(this)
@@ -93,18 +96,21 @@ class WebViewActivity : BaseActivity() {
             )
         }
         // AM (DISCORD) -->
+        discordWebViewShown = true
         lifecycleScope.launchIO {
-            DiscordRPCService.setAnimeScreen(this@WebViewActivity, DiscordScreen.WEBVIEW)
-            DiscordRPCService.setMangaScreen(this@WebViewActivity, DiscordScreen.WEBVIEW)
+            DiscordRPCService.showWebView(this@WebViewActivity)
         }
         // <-- AM (DISCORD)
     }
 
     // AM (DISCORD) -->
     override fun onDestroy() {
-        lifecycleScope.launchIO {
-            DiscordRPCService.setAnimeScreen(this@WebViewActivity, DiscordRPCService.lastUsedScreen)
-            DiscordRPCService.setMangaScreen(this@WebViewActivity, DiscordRPCService.lastUsedScreen)
+        if (discordWebViewShown && !isChangingConfigurations) {
+            val appContext = applicationContext
+            // lifecycleScope is already cancelled by the time onDestroy runs.
+            Injekt.get<CoroutineScope>().launchIO {
+                DiscordRPCService.restoreAfterWebView(appContext)
+            }
         }
         super.onDestroy()
     }

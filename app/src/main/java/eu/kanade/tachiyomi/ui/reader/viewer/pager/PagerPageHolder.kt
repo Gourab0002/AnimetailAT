@@ -15,6 +15,7 @@ import eu.kanade.tachiyomi.ui.reader.viewer.ReaderPageImageView
 import eu.kanade.tachiyomi.ui.reader.viewer.ReaderProgressIndicator
 import eu.kanade.tachiyomi.ui.webview.WebViewActivity
 import eu.kanade.tachiyomi.widget.ViewPagerAdapter
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
@@ -118,11 +119,8 @@ class PagerPageHolder(
             }
             combine(
                 page.statusFlow,
-                translationPreferences.enabled.changes(),
-                translationPreferences.provider.changes(),
-                translationPreferences.sourceLanguage.changes(),
-                translationPreferences.targetLanguage.changes(),
-            ) { state, _, _, _, _ -> state }.collectLatest { state ->
+                translationPreferences.readerReloadSignals(),
+            ) { state, _ -> state }.collectLatest { state ->
                 when (state) {
                     Page.State.QUEUE -> setQueued()
 
@@ -238,6 +236,8 @@ class PagerPageHolder(
                 }
                 removeErrorLayout()
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Throwable) {
             logcat(LogPriority.ERROR, e)
             withUIContext {
